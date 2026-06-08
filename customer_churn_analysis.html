@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Churn Analysis – Data Analysis Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #232736;
+    --accent: #00e5a0;
+    --accent2: #3b82f6;
+    --accent3: #f59e0b;
+    --red: #ef4444;
+    --text: #e8ecf4;
+    --muted: #7c849a;
+    --tag-bg: #1a2235;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* Grid noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 36px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,229,160,0.08);
+    border: 1px solid rgba(0,229,160,0.25);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 580px;
+  }
+
+  .tech-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
+  }
+
+  .tech-tag {
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    padding: 5px 12px;
+    border-radius: 3px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .tech-tag:hover { border-color: var(--accent2); color: #93c5fd; }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi-card.green::after  { background: var(--accent); }
+  .kpi-card.blue::after   { background: var(--accent2); }
+  .kpi-card.amber::after  { background: var(--accent3); }
+  .kpi-card.red::after    { background: var(--red); }
+
+  .kpi-card:hover { border-color: #2d3347; transform: translateY(-2px); }
+
+  .kpi-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .kpi-card.green .kpi-value  { color: var(--accent); }
+  .kpi-card.blue .kpi-value   { color: var(--accent2); }
+  .kpi-card.amber .kpi-value  { color: var(--accent3); }
+  .kpi-card.red .kpi-value    { color: var(--red); }
+
+  .kpi-sub { font-size: 11px; color: var(--muted); }
+
+  /* Sections */
+  .section {
+    margin-bottom: 44px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .section-num {
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    font-weight: 500;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Bullet list */
+  .bullet-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bullet-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 18px;
+    transition: border-color 0.25s;
+  }
+
+  .bullet-item:hover { border-color: rgba(0,229,160,0.3); }
+
+  .bullet-icon {
+    font-size: 14px;
+    min-width: 20px;
+    margin-top: 1px;
+  }
+
+  .bullet-text {
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: #c8d0e0;
+  }
+
+  .bullet-text strong { color: var(--accent); font-weight: 500; }
+
+  /* Visual chart section */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 44px;
+    animation: fadeUp 0.6s 0.25s ease both;
+  }
+
+  @media (max-width: 580px) {
+    .charts-row { grid-template-columns: 1fr; }
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .chart-title {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* Bar chart */
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+
+  .bar-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; text-align: right; }
+
+  .bar-track {
+    flex: 1;
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    animation: growBar 1.2s cubic-bezier(0.16,1,0.3,1) both;
+    animation-delay: var(--delay, 0s);
+  }
+
+  .bar-val { font-size: 11px; color: var(--text); width: 36px; flex-shrink: 0; }
+
+  /* Donut chart (CSS) */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .donut {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: conic-gradient(var(--red) 0% 26.5%, var(--accent) 26.5% 100%);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .donut::after {
+    content: '';
+    position: absolute;
+    inset: 18px;
+    background: var(--surface);
+    border-radius: 50%;
+  }
+
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); }
+
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Tools table */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .tool-card:hover { border-color: rgba(59,130,246,0.4); }
+
+  .tool-icon { font-size: 18px; }
+
+  .tool-info {}
+
+  .tool-name { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+
+  .tool-desc { font-size: 10.5px; color: var(--muted); line-height: 1.5; }
+
+  /* Insights */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    border-radius: 6px;
+    padding: 16px;
+    font-size: 12px;
+    line-height: 1.65;
+    color: #c8d0e0;
+    transition: border-color 0.2s;
+  }
+
+  .insight-card:hover { border-color: var(--accent3); border-left-color: var(--accent3); }
+
+  .insight-icon { font-size: 16px; margin-bottom: 8px; display: block; }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding-top: 28px;
+    margin-top: 56px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+    gap: 12px;
+    animation: fadeUp 0.6s 0.35s ease both;
+  }
+
+  .footer-left { font-size: 11px; color: var(--muted); line-height: 1.6; }
+  .footer-left strong { color: var(--text); }
+
+  .footer-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .footer-tag {
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  @keyframes growBar {
+    from { width: 0; }
+    to   { width: var(--w); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">Data Analysis Project</div>
+    <h1>Customer <span>Churn</span><br>Analysis</h1>
+    <p class="subtitle">Developed a customer churn analysis solution using Python, SQL, and Power BI to analyze 5,000+ customer records. Performed EDA, data cleaning, and visualization to identify retention trends and provide actionable business insights.</p>
+    <div class="tech-stack">
+      <span class="tech-tag">Python</span>
+      <span class="tech-tag">SQL</span>
+      <span class="tech-tag">Excel</span>
+      <span class="tech-tag">Power BI</span>
+      <span class="tech-tag">Pandas</span>
+      <span class="tech-tag">NumPy</span>
+      <span class="tech-tag">Matplotlib</span>
+      <span class="tech-tag">EDA</span>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">Records Analyzed</div>
+      <div class="kpi-value">5K+</div>
+      <div class="kpi-sub">Customer dataset</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Churn Rate</div>
+      <div class="kpi-value">26.5%</div>
+      <div class="kpi-sub">Overall dataset</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Data Quality ↑</div>
+      <div class="kpi-value">20%</div>
+      <div class="kpi-sub">Missing data reduced</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Churn Risk Factor</div>
+      <div class="kpi-value">+15%</div>
+      <div class="kpi-sub">Probability uplift</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Churn by Contract Type</div>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <div class="bar-label">Month-Month</div>
+          <div class="bar-track"><div class="bar-fill" style="--w:72%;width:72%;background:var(--red);--delay:0.1s"></div></div>
+          <div class="bar-val">72%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">One Year</div>
+          <div class="bar-track"><div class="bar-fill" style="--w:28%;width:28%;background:var(--accent3);--delay:0.2s"></div></div>
+          <div class="bar-val">28%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Two Year</div>
+          <div class="bar-track"><div class="bar-fill" style="--w:8%;width:8%;background:var(--accent);--delay:0.3s"></div></div>
+          <div class="bar-val">8%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">No Contract</div>
+          <div class="bar-track"><div class="bar-fill" style="--w:55%;width:55%;background:#a855f7;--delay:0.4s"></div></div>
+          <div class="bar-val">55%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Churned vs Retained</div>
+      <div class="donut-wrap">
+        <div class="donut"></div>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--red)"></div>
+            Churned — 26.5%
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--accent)"></div>
+            Retained — 73.5%
+          </div>
+          <br>
+          <div style="font-size:10px;color:var(--muted);line-height:1.5">High churn concentrated<br>in months 1–6</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Contributions -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Key Contributions</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="bullet-list">
+      <div class="bullet-item">
+        <span class="bullet-icon">🗄️</span>
+        <span class="bullet-text">Analyzed a dataset of <strong>5,000+ customer records</strong> to identify key factors influencing customer churn and retention across multiple demographics and service tiers.</span>
+      </div>
+      <div class="bullet-item">
+        <span class="bullet-icon">🧹</span>
+        <span class="bullet-text">Performed <strong>data cleaning and preprocessing</strong>, reducing missing and inconsistent data by <strong>20%</strong> using Python (Pandas) and SQL validation queries.</span>
+      </div>
+      <div class="bullet-item">
+        <span class="bullet-icon">📊</span>
+        <span class="bullet-text">Conducted <strong>Exploratory Data Analysis (EDA)</strong> using <strong>Pandas, NumPy, and Matplotlib</strong> to uncover customer behavior trends including tenure, contract type, and service usage patterns.</span>
+      </div>
+      <div class="bullet-item">
+        <span class="bullet-icon">📈</span>
+        <span class="bullet-text">Created <strong>interactive dashboards in Power BI</strong> to visualize KPIs, churn rates, and customer demographics with drill-through filters for dynamic business exploration.</span>
+      </div>
+      <div class="bullet-item">
+        <span class="bullet-icon">💡</span>
+        <span class="bullet-text">Generated actionable insights highlighting factors associated with a <strong>15% higher churn probability</strong>, supporting data-driven decisions for customer retention strategy.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools & Technologies -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Tools & Technologies</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="tools-grid">
+      <div class="tool-card">
+        <span class="tool-icon">🐍</span>
+        <div class="tool-info">
+          <div class="tool-name">Python</div>
+          <div class="tool-desc">EDA, data wrangling, statistical analysis using Pandas, NumPy, Matplotlib, Seaborn</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">🗃️</span>
+        <div class="tool-info">
+          <div class="tool-name">SQL</div>
+          <div class="tool-desc">Data extraction, joins, aggregations, and preprocessing from relational databases</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">📊</span>
+        <div class="tool-info">
+          <div class="tool-name">Power BI</div>
+          <div class="tool-desc">Interactive dashboards, KPI cards, slicers, and churn trend visualizations</div>
+        </div>
+      </div>
+      <div class="tool-card">
+        <span class="tool-icon">📗</span>
+        <div class="tool-info">
+          <div class="tool-name">Excel</div>
+          <div class="tool-desc">Pivot tables, initial data profiling, summary statistics, and reporting</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Business Insights -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Actionable Insights</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="insight-grid">
+      <div class="insight-card">
+        <span class="insight-icon">📋</span>
+        Customers on <strong>month-to-month contracts</strong> showed the highest churn rate (72%), indicating a need for long-term contract incentives.
+      </div>
+      <div class="insight-card">
+        <span class="insight-icon">🕐</span>
+        New customers with <strong>tenure under 6 months</strong> were 15% more likely to churn — suggesting a critical onboarding window.
+      </div>
+      <div class="insight-card">
+        <span class="insight-icon">💳</span>
+        Customers using <strong>electronic check payments</strong> had the highest churn probability versus auto-payment users.
+      </div>
+      <div class="insight-card">
+        <span class="insight-icon">🛡️</span>
+        Customers without <strong>tech support or online security</strong> add-ons were significantly more likely to leave.
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-left">
+      <strong>Customer Churn Analysis</strong><br>
+      Fresher Data Analyst Portfolio Project
+    </div>
+    <div class="footer-tags">
+      <span class="footer-tag">EDA</span>
+      <span class="footer-tag">Data Cleaning</span>
+      <span class="footer-tag">Visualization</span>
+      <span class="footer-tag">Business Insights</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
